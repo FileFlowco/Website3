@@ -1,0 +1,1854 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <title>FileFlow — Demo Lab</title>
+
+  <style>
+    :root{
+      --bg0:#06070b;
+      --bg1:#0a0d14;
+      --fg:#f2f4fb;
+      --muted:rgba(242,244,251,.62);
+      --muted2:rgba(242,244,251,.42);
+      --line:rgba(242,244,251,.10);
+      --line2:rgba(242,244,251,.06);
+      --shadow:rgba(0,0,0,.55);
+
+      --a:#7cf5c6;
+      --b:#7cc7ff;
+      --c:#b78cff;
+      --d:#ffb46b;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, Inter, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+
+      --radius: 18px;
+      --radius2: 26px;
+      --pad: 18px;
+      --pad2: 26px;
+
+      --glass: rgba(255,255,255,.04);
+      --glass2: rgba(255,255,255,.06);
+      --blur: 18px;
+      --focus: 0 0 0 2px rgba(124,245,198,.55), 0 0 0 7px rgba(124,245,198,.12);
+    }
+
+    * { box-sizing:border-box; }
+    html,body { height:100%; }
+    body{
+      margin:0;
+      color:var(--fg);
+      background:
+        radial-gradient(1200px 800px at 20% 20%, rgba(124,245,198,.10), transparent 55%),
+        radial-gradient(1100px 820px at 75% 25%, rgba(183,140,255,.11), transparent 58%),
+        radial-gradient(900px 700px at 70% 80%, rgba(124,199,255,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1) 58%, var(--bg0));
+      font-family:var(--sans);
+      overflow-x:hidden;
+    }
+
+    /* ambient film grain */
+    .grain{
+      position:fixed; inset:-200%;
+      pointer-events:none;
+      opacity:.20;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      animation: drift 18s linear infinite;
+      transform: translate3d(0,0,0);
+    }
+    @keyframes drift { to { transform: translate3d(200px,120px,0); } }
+
+    /* top chrome */
+    .chrome{
+      position:sticky; top:0; z-index:50;
+      border-bottom:1px solid var(--line2);
+      backdrop-filter: blur(var(--blur));
+      background: linear-gradient(180deg, rgba(6,7,11,.72), rgba(6,7,11,.38));
+    }
+    .chromeInner{
+      max-width:1240px;
+      margin:0 auto;
+      padding: 14px 18px;
+      display:flex;
+      align-items:center;
+      gap: 14px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      min-width: 210px;
+    }
+    .mark{
+      width:34px; height:34px; border-radius:12px;
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.16), transparent 60%),
+        linear-gradient(135deg, rgba(124,245,198,.95), rgba(124,199,255,.85), rgba(183,140,255,.85));
+      box-shadow: 0 18px 38px rgba(0,0,0,.35);
+    }
+    .brandTitle{
+      display:flex; flex-direction:column; line-height:1.1;
+    }
+    .brandTitle strong{ font-weight:650; letter-spacing:-.02em; }
+    .brandTitle span{ font-family:var(--mono); font-size:.74rem; color:var(--muted2); }
+
+    .nav{
+      display:flex; gap:10px; align-items:center;
+      flex:1;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .nav::-webkit-scrollbar{ display:none; }
+    .pill{
+      appearance:none;
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+      padding: 9px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      white-space:nowrap;
+      transition: transform .12s ease, background .18s ease, border-color .18s ease, color .18s ease;
+      font-family: var(--mono);
+      font-size: .85rem;
+    }
+    .pill:hover{ transform: translateY(-1px); border-color: var(--line); color: var(--fg); }
+    .pill[aria-current="page"]{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border-color: rgba(124,245,198,.30);
+      color: var(--fg);
+    }
+    .k{
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:.72rem;
+      padding:2px 7px;
+      border-radius: 999px;
+      border:1px solid var(--line2);
+      color: var(--muted2);
+      background: rgba(255,255,255,.02);
+    }
+    .right{
+      display:flex; align-items:center; gap:10px;
+      min-width: 240px;
+      justify-content:flex-end;
+    }
+    .btn{
+      appearance:none;
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.03);
+      color: var(--fg);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      transition: transform .12s ease, border-color .18s ease, background .18s ease;
+      font-family: var(--mono);
+      font-size: .85rem;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: var(--line); background: rgba(255,255,255,.045); }
+    .btn.primary{
+      border-color: rgba(124,245,198,.35);
+      background: linear-gradient(135deg, rgba(124,245,198,.16), rgba(124,199,255,.10));
+    }
+    .btn.danger{
+      border-color: rgba(255,107,107,.35);
+      background: linear-gradient(135deg, rgba(255,107,107,.12), rgba(255,255,255,.02));
+    }
+
+    .btn:focus, .pill:focus, input:focus, textarea:focus, select:focus{
+      outline:none;
+      box-shadow: var(--focus);
+    }
+
+    /* layout */
+    .wrap{
+      max-width:1240px;
+      margin:0 auto;
+      padding: 22px 18px 48px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      align-items:stretch;
+      margin-top: 16px;
+    }
+
+    .panel{
+      border:1px solid var(--line2);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border-radius: var(--radius2);
+      box-shadow: 0 40px 120px rgba(0,0,0,.45);
+      overflow:hidden;
+      position:relative;
+    }
+    .panel::before{
+      content:"";
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(500px 180px at 20% 20%, rgba(124,245,198,.16), transparent 60%),
+        radial-gradient(520px 220px at 80% 0%, rgba(183,140,255,.14), transparent 62%),
+        radial-gradient(420px 240px at 80% 90%, rgba(124,199,255,.10), transparent 60%);
+      opacity:.55;
+      pointer-events:none;
+      filter: blur(0px);
+    }
+
+    .panelInner{
+      position:relative;
+      padding: 26px;
+    }
+
+    .headline{
+      font-size: clamp(2.4rem, 4.6vw, 4.0rem);
+      line-height:1.02;
+      letter-spacing:-.05em;
+      margin: 0;
+    }
+    .subhead{
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 1.04rem;
+      max-width: 54ch;
+    }
+
+    .heroActions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top: 18px;
+    }
+
+    .signalRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 16px;
+      font-family: var(--mono);
+      color: var(--muted2);
+      font-size: .78rem;
+    }
+    .tag{
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      padding: 7px 10px;
+      border-radius: 999px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px; background: var(--a);
+      box-shadow: 0 0 0 6px rgba(124,245,198,.10);
+    }
+    .dot.b{ background: var(--b); box-shadow: 0 0 0 6px rgba(124,199,255,.10); }
+    .dot.c{ background: var(--c); box-shadow: 0 0 0 6px rgba(183,140,255,.10); }
+    .dot.d{ background: var(--d); box-shadow: 0 0 0 6px rgba(255,180,107,.10); }
+
+    /* right side “lab” */
+    .labHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom: 14px;
+    }
+    .labHeader h2{
+      margin:0;
+      font-size: 1.02rem;
+      font-family: var(--mono);
+      letter-spacing:.02em;
+      color: var(--muted);
+      font-weight:600;
+      text-transform: uppercase;
+    }
+    .badge{
+      font-family: var(--mono);
+      font-size: .78rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    .meter{
+      border-top: 1px solid var(--line2);
+      padding-top: 16px;
+      display:grid;
+      gap: 14px;
+    }
+    .meterItem{
+      display:grid;
+      gap:8px;
+    }
+    .meterTop{
+      display:flex; align-items:center; justify-content:space-between;
+      font-family: var(--mono);
+      font-size: .82rem;
+      color: var(--muted);
+    }
+    .bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line2);
+      overflow:hidden;
+    }
+    .bar > i{
+      display:block; height:100%;
+      width: 10%;
+      background: linear-gradient(90deg, rgba(124,245,198,.85), rgba(124,199,255,.70), rgba(183,140,255,.55));
+      border-radius: 999px;
+      box-shadow: 0 12px 30px rgba(124,245,198,.22);
+      transition: width .35s ease;
+    }
+
+    .miniGrid{
+      margin-top: 18px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .mini{
+      border: 1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      padding: 12px;
+      overflow:hidden;
+      position:relative;
+      min-height: 92px;
+    }
+    .mini h3{
+      margin:0;
+      font-family: var(--mono);
+      font-size: .82rem;
+      color: var(--muted);
+      font-weight:600;
+    }
+    .mini p{
+      margin: 8px 0 0;
+      color: var(--muted2);
+      font-size: .9rem;
+      line-height:1.35;
+    }
+    .mini::after{
+      content:"";
+      position:absolute;
+      right:-30px; bottom:-30px;
+      width: 120px; height: 120px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(124,245,198,.16), transparent 62%);
+      filter: blur(0px);
+      pointer-events:none;
+    }
+
+    /* content area */
+    .content{
+      margin-top: 18px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .view{
+      display:none;
+      animation: in .20s ease-out;
+    }
+    .view.active{ display:block; }
+    @keyframes in{
+      from{ opacity:0; transform: translateY(8px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    /* Demos view */
+    .demoShell{
+      display:grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      align-items:start;
+    }
+
+    .demoList{
+      display:grid;
+      gap: 10px;
+    }
+
+    .demoRow{
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      border-radius: var(--radius);
+      padding: 14px;
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items:center;
+    }
+    .demoRow strong{
+      display:block;
+      font-weight:650;
+      letter-spacing:-.02em;
+      font-size: 1.02rem;
+    }
+    .demoRow span{
+      display:block;
+      margin-top:6px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .82rem;
+    }
+    .demoRow .actions{
+      display:flex;
+      gap: 8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .side{
+      position: sticky;
+      top: 84px;
+    }
+
+    .side .panelInner{ padding: 18px; }
+    .sideTitle{
+      margin:0 0 10px;
+      font-family: var(--mono);
+      font-size: .86rem;
+      color: var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .spec{
+      display:grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .spec label{
+      font-family: var(--mono);
+      font-size: .78rem;
+      color: var(--muted2);
+      display:grid;
+      gap: 6px;
+    }
+    .spec select, .spec input{
+      width:100%;
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 10px 10px;
+      font-family: var(--sans);
+    }
+
+    /* Builder view */
+    .builderGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items:start;
+    }
+    .builderGrid .panelInner{ padding: 18px; }
+
+    .fieldGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .fieldGrid label{
+      display:grid;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: .78rem;
+      color: var(--muted2);
+    }
+    .fieldGrid input, .fieldGrid textarea{
+      width:100%;
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 10px 10px;
+      font-family: var(--sans);
+      resize: vertical;
+    }
+    .fieldGrid textarea{ grid-column: 1 / -1; min-height: 140px; }
+    .builderActions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 12px;
+    }
+
+    .doc{
+      font-family: var(--mono);
+      font-size: .82rem;
+      color: var(--muted);
+      line-height:1.55;
+      white-space: pre-wrap;
+      border:1px solid var(--line2);
+      background: rgba(0,0,0,.18);
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 320px;
+    }
+
+    /* Insights */
+    .insightsGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .kv{
+      display:grid;
+      gap: 10px;
+    }
+    .kvRow{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom: 1px dashed rgba(255,255,255,.08);
+      padding: 10px 0;
+      font-family: var(--mono);
+      font-size: .84rem;
+      color: var(--muted);
+    }
+    .kvRow b{ color: var(--fg); font-weight:650; }
+    .log{
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      padding: 12px;
+      max-height: 340px;
+      overflow:auto;
+      font-family: var(--mono);
+      font-size: .82rem;
+      color: var(--muted);
+      line-height:1.55;
+    }
+    .log .e{ color: var(--fg); }
+    .log .t{ color: var(--muted2); }
+
+    /* Contact */
+    .contactGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items:start;
+    }
+    .contactGrid .panelInner{ padding: 18px; }
+    .contactForm{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .contactForm label{
+      display:grid;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: .78rem;
+      color: var(--muted2);
+    }
+    .contactForm input, .contactForm textarea{
+      width:100%;
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 10px 10px;
+      font-family: var(--sans);
+      resize: vertical;
+    }
+    .contactForm textarea{ grid-column: 1 / -1; min-height: 150px; }
+    .contactActions{
+      grid-column: 1 / -1;
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top: 6px;
+    }
+
+    /* command palette */
+    .overlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.48);
+      display:none;
+      align-items:flex-start;
+      justify-content:center;
+      padding: 84px 18px;
+      z-index: 80;
+    }
+    .overlay.open{ display:flex; }
+    .palette{
+      width:min(820px, 100%);
+      border-radius: 18px;
+      border:1px solid var(--line2);
+      background: linear-gradient(180deg, rgba(10,12,18,.88), rgba(10,12,18,.62));
+      backdrop-filter: blur(var(--blur));
+      box-shadow: 0 60px 180px rgba(0,0,0,.65);
+      overflow:hidden;
+    }
+    .paletteTop{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line2);
+    }
+    .paletteTop input{
+      width:100%;
+      border:1px solid var(--line2);
+      background: rgba(255,255,255,.02);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-family: var(--mono);
+      font-size: .92rem;
+    }
+    .paletteList{
+      max-height: 360px;
+      overflow:auto;
+    }
+    .item{
+      display:flex;
+      justify-content:space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line2);
+      cursor:pointer;
+    }
+    .item:hover{ background: rgba(255,255,255,.03); }
+    .item .left{
+      display:grid;
+      gap:6px;
+      min-width:0;
+    }
+    .item .left b{
+      font-family: var(--mono);
+      font-size: .86rem;
+      color: var(--fg);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .item .left span{
+      color: var(--muted);
+      font-size: .9rem;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* small screens */
+    @media (max-width: 980px){
+      .hero{ grid-template-columns: 1fr; }
+      .right{ min-width: 0; }
+      .demoShell{ grid-template-columns: 1fr; }
+      .side{ position: relative; top:0; }
+      .builderGrid{ grid-template-columns: 1fr; }
+      .insightsGrid{ grid-template-columns: 1fr; }
+      .contactGrid{ grid-template-columns: 1fr; }
+      .brand{ min-width: 0; }
+    }
+
+    /* reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .grain{ animation:none; }
+      .view{ animation:none; }
+      .bar > i{ transition:none; }
+      .pill, .btn{ transition:none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grain"></div>
+
+  <div class="chrome" role="banner">
+    <div class="chromeInner">
+      <div class="brand" aria-label="FileFlow">
+        <div class="mark" aria-hidden="true"></div>
+        <div class="brandTitle">
+          <strong>FileFlow</strong>
+          <span>demo lab · html system</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="pill" data-route="/" aria-current="page">home <span class="k">1</span></button>
+        <button class="pill" data-route="/demos">demos <span class="k">2</span></button>
+        <button class="pill" data-route="/builder">builder <span class="k">3</span></button>
+        <button class="pill" data-route="/insights">insights <span class="k">4</span></button>
+        <button class="pill" data-route="/contact">contact <span class="k">5</span></button>
+      </nav>
+
+      <div class="right">
+        <button class="btn" id="cmdBtn" title="Command palette (⌘K / Ctrl+K)">
+          ⌘K
+          <span style="opacity:.7">palette</span>
+        </button>
+        <button class="btn primary" id="startBtn">start a demo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" role="main">
+    <!-- HOME -->
+    <div class="view active" id="view-home" data-view="/">
+      <div class="hero">
+        <div class="panel">
+          <div class="panelInner">
+            <h1 class="headline">A demo system, not a template.</h1>
+            <p class="subhead">
+              FileFlow can present multiple creative directions without repeating patterns:
+              different IA, different interaction model, and real client-intake persistence.
+            </p>
+
+            <div class="heroActions">
+              <button class="btn primary" data-route="/demos">open demos</button>
+              <button class="btn" data-route="/builder">build a spec</button>
+              <button class="btn" data-route="/contact">capture lead</button>
+              <button class="btn danger" id="wipeBtn">wipe local data</button>
+            </div>
+
+            <div class="signalRow" id="signalRow">
+              <span class="tag"><i class="dot"></i>nav: real routes</span>
+              <span class="tag"><i class="dot b"></i>storage: persisted</span>
+              <span class="tag"><i class="dot c"></i>flows: traceable</span>
+              <span class="tag"><i class="dot d"></i>accessibility: keyboard</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>runtime health</h2>
+              <span class="badge" id="envBadge">env: local</span>
+            </div>
+
+            <div class="meter" aria-label="Runtime meters">
+              <div class="meterItem">
+                <div class="meterTop"><span>interaction signal</span><span id="m1v">0%</span></div>
+                <div class="bar"><i id="m1"></i></div>
+              </div>
+              <div class="meterItem">
+                <div class="meterTop"><span>lead pipeline</span><span id="m2v">0</span></div>
+                <div class="bar"><i id="m2"></i></div>
+              </div>
+              <div class="meterItem">
+                <div class="meterTop"><span>spec coverage</span><span id="m3v">0%</span></div>
+                <div class="bar"><i id="m3"></i></div>
+              </div>
+            </div>
+
+            <div class="miniGrid">
+              <div class="mini">
+                <h3>navigator</h3>
+                <p>History API routing + keyboardable pills.</p>
+              </div>
+              <div class="mini">
+                <h3>command palette</h3>
+                <p>Search actions, jump views, export data.</p>
+              </div>
+              <div class="mini">
+                <h3>lead vault</h3>
+                <p>Local durable submissions + export JSON.</p>
+              </div>
+              <div class="mini">
+                <h3>event trace</h3>
+                <p>Every action is stored for insights.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>what makes this “different”</h2>
+              <span class="badge" id="buildId">build: —</span>
+            </div>
+
+            <div class="demoList" style="margin-top:10px">
+              <div class="demoRow">
+                <div>
+                  <strong>Non-card architecture</strong>
+                  <span>Panels + lab instrumentation + command routing.</span>
+                </div>
+                <div class="actions">
+                  <button class="btn" data-route="/insights">open trace</button>
+                </div>
+              </div>
+
+              <div class="demoRow">
+                <div>
+                  <strong>Client-facing demo selection</strong>
+                  <span>Curated demo modes + generation of a clean spec artifact.</span>
+                </div>
+                <div class="actions">
+                  <button class="btn" data-route="/demos">select mode</button>
+                  <button class="btn" data-route="/builder">generate spec</button>
+                </div>
+              </div>
+
+              <div class="demoRow">
+                <div>
+                  <strong>Real intake flow</strong>
+                  <span>Form submissions persist locally and export cleanly.</span>
+                </div>
+                <div class="actions">
+                  <button class="btn primary" data-route="/contact">capture lead</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMOS -->
+    <div class="view" id="view-demos" data-view="/demos">
+      <div class="demoShell">
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>demo modes</h2>
+              <span class="badge" id="activeModeBadge">mode: —</span>
+            </div>
+
+            <div class="demoList" id="demoList"></div>
+          </div>
+        </div>
+
+        <div class="panel side">
+          <div class="panelInner">
+            <h3 class="sideTitle">demo configuration</h3>
+
+            <div class="spec">
+              <label>
+                audience
+                <select id="audienceSel">
+                  <option value="founder">Founder / Owner</option>
+                  <option value="marketing">Marketing team</option>
+                  <option value="product">Product team</option>
+                  <option value="engineering">Engineering org</option>
+                </select>
+              </label>
+
+              <label>
+                priority
+                <select id="prioritySel">
+                  <option value="conversion">Conversion</option>
+                  <option value="performance">Performance</option>
+                  <option value="accessibility">Accessibility</option>
+                  <option value="operations">Operations</option>
+                </select>
+              </label>
+
+              <label>
+                preferred stack
+                <select id="stackSel">
+                  <option value="html">HTML/CSS/JS (no framework)</option>
+                  <option value="next">Next.js / React</option>
+                  <option value="native">Native iOS + backend</option>
+                  <option value="cross">Cross-platform app</option>
+                </select>
+              </label>
+
+              <label>
+                notes (stored)
+                <input id="demoNotes" placeholder="short context" />
+              </label>
+
+              <button class="btn primary" id="saveConfigBtn">save config</button>
+              <button class="btn" id="exportConfigBtn">export config</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUILDER -->
+    <div class="view" id="view-builder" data-view="/builder">
+      <div class="builderGrid">
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>spec builder</h2>
+              <span class="badge" id="specBadge">spec: draft</span>
+            </div>
+
+            <div class="fieldGrid" style="margin-top:10px">
+              <label>
+                client name
+                <input id="bClient" placeholder="e.g., NextStep" />
+              </label>
+              <label>
+                domain (optional)
+                <input id="bDomain" placeholder="e.g., example.com" />
+              </label>
+
+              <label>
+                project type
+                <input id="bType" placeholder="e.g., marketing site + intake + analytics" />
+              </label>
+              <label>
+                target launch window
+                <input id="bWindow" placeholder="e.g., 4–6 weeks" />
+              </label>
+
+              <label>
+                goals (comma-separated)
+                <input id="bGoals" placeholder="conversion, trust, SEO, speed" />
+              </label>
+              <label>
+                constraints (comma-separated)
+                <input id="bConstraints" placeholder="no rewrites, measurable, accessible" />
+              </label>
+
+              <label>
+                integrations (comma-separated)
+                <input id="bIntegrations" placeholder="forms, CRM, email, analytics" />
+              </label>
+              <label>
+                success metrics (comma-separated)
+                <input id="bMetrics" placeholder="lead rate, load time, form completion" />
+              </label>
+
+              <label>
+                notes
+                <textarea id="bNotes" placeholder="Additional context captured for delivery. Stored locally."></textarea>
+              </label>
+            </div>
+
+            <div class="builderActions">
+              <button class="btn primary" id="genSpecBtn">generate</button>
+              <button class="btn" id="saveSpecBtn">save</button>
+              <button class="btn" id="exportSpecBtn">export</button>
+              <button class="btn danger" id="clearSpecBtn">clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>artifact</h2>
+              <span class="badge" id="artifactBadge">ready: no</span>
+            </div>
+
+            <div class="doc" id="specDoc" aria-label="Spec output"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="view" id="view-insights" data-view="/insights">
+      <div class="insightsGrid">
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>system telemetry</h2>
+              <span class="badge" id="telemetryBadge">session: —</span>
+            </div>
+
+            <div class="kv" id="kv"></div>
+
+            <div class="builderActions" style="margin-top:14px">
+              <button class="btn" id="exportLeadsBtn">export leads</button>
+              <button class="btn" id="exportEventsBtn">export events</button>
+              <button class="btn danger" id="clearEventsBtn">clear events</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>event trace</h2>
+              <span class="badge" id="eventCountBadge">events: 0</span>
+            </div>
+            <div class="log" id="eventLog" aria-label="Event log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="view" id="view-contact" data-view="/contact">
+      <div class="contactGrid">
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>project intake</h2>
+              <span class="badge" id="leadBadge">stored: 0</span>
+            </div>
+
+            <form class="contactForm" id="leadForm">
+              <label>
+                name
+                <input name="name" autocomplete="name" required />
+              </label>
+              <label>
+                email
+                <input name="email" autocomplete="email" required />
+              </label>
+              <label>
+                company
+                <input name="company" autocomplete="organization" />
+              </label>
+              <label>
+                budget (usd)
+                <input name="budget" inputmode="numeric" placeholder="e.g., 6000–12000" />
+              </label>
+
+              <label>
+                request
+                <textarea name="message" placeholder="What are we building? Timeline? Success criteria?"></textarea>
+              </label>
+
+              <div class="contactActions">
+                <button class="btn primary" type="submit">store submission</button>
+                <button class="btn" type="button" id="exportSingleBtn">export latest</button>
+                <button class="btn danger" type="button" id="clearLeadsBtn">clear leads</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panelInner">
+            <div class="labHeader">
+              <h2>lead vault</h2>
+              <span class="badge" id="vaultBadge">—</span>
+            </div>
+            <div class="log" id="leadLog" aria-label="Lead list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- command palette -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="palette" role="document">
+      <div class="paletteTop">
+        <input id="cmdInput" placeholder="Type a command… (routes, export, clear, start)" autocomplete="off" />
+        <span class="badge">esc</span>
+      </div>
+      <div class="paletteList" id="cmdList"></div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const $ = (s, r=document) => r.querySelector(s);
+      const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+      const STORAGE = {
+        leads: "fileflow.demo.leads.v1",
+        events: "fileflow.demo.events.v1",
+        config: "fileflow.demo.config.v1",
+        spec:  "fileflow.demo.spec.v1",
+        mode:  "fileflow.demo.mode.v1",
+        session:"fileflow.demo.session.v1"
+      };
+
+      const nowISO = () => new Date().toISOString();
+      const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2));
+      const safeParse = (x, fallback) => { try { return JSON.parse(x); } catch { return fallback; } };
+
+      const store = {
+        get(key, fallback){
+          const raw = localStorage.getItem(key);
+          if (!raw) return fallback;
+          return safeParse(raw, fallback);
+        },
+        set(key, value){
+          localStorage.setItem(key, JSON.stringify(value));
+        },
+        del(key){
+          localStorage.removeItem(key);
+        }
+      };
+
+      const sessionId = (() => {
+        const existing = store.get(STORAGE.session, null);
+        if (existing && existing.id) return existing.id;
+        const id = uid();
+        store.set(STORAGE.session, { id, createdAt: nowISO() });
+        return id;
+      })();
+
+      const pushEvent = (type, data={}) => {
+        const events = store.get(STORAGE.events, []);
+        const e = { id: uid(), ts: nowISO(), sessionId, type, data };
+        events.push(e);
+        store.set(STORAGE.events, events);
+        return e;
+      };
+
+      const downloadJSON = (filename, obj) => {
+        const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          URL.revokeObjectURL(a.href);
+          a.remove();
+        }, 0);
+      };
+
+      /* ROUTER */
+      const routes = ["/", "/demos", "/builder", "/insights", "/contact"];
+      const viewByRoute = {
+        "/": $("#view-home"),
+        "/demos": $("#view-demos"),
+        "/builder": $("#view-builder"),
+        "/insights": $("#view-insights"),
+        "/contact": $("#view-contact"),
+      };
+
+      const setActiveNav = (route) => {
+        $$(".pill[data-route]").forEach(b => {
+          const on = b.getAttribute("data-route") === route;
+          b.setAttribute("aria-current", on ? "page" : "false");
+        });
+      };
+
+      const showRoute = (route, {replace=false, source="nav"} = {}) => {
+        if (!routes.includes(route)) route = "/";
+        Object.values(viewByRoute).forEach(v => v.classList.remove("active"));
+        viewByRoute[route].classList.add("active");
+        setActiveNav(route);
+
+        const url = route;
+        if (replace) history.replaceState({ route }, "", url);
+        else history.pushState({ route }, "", url);
+
+        pushEvent("route", { route, source });
+
+        renderAll();
+      };
+
+      const routeFromLocation = () => {
+        const p = location.pathname || "/";
+        return routes.includes(p) ? p : "/";
+      };
+
+      $$(".pill[data-route], .btn[data-route]").forEach(el => {
+        el.addEventListener("click", () => showRoute(el.getAttribute("data-route"), { source: "click" }));
+      });
+
+      window.addEventListener("popstate", () => {
+        const route = routeFromLocation();
+        Object.values(viewByRoute).forEach(v => v.classList.remove("active"));
+        viewByRoute[route].classList.add("active");
+        setActiveNav(route);
+        pushEvent("route", { route, source: "popstate" });
+        renderAll();
+      });
+
+      /* DEMOS */
+      const DEMOS = [
+        {
+          id: "nebula-intake",
+          title: "Nebula Intake",
+          desc: "High-trust client intake with deterministic persistence.",
+          tags: ["intake", "persistence", "export"],
+          run: () => showRoute("/contact", { source: "demo" })
+        },
+        {
+          id: "spec-forge",
+          title: "Spec Forge",
+          desc: "Generate a delivery-grade spec artifact from structured inputs.",
+          tags: ["artifact", "requirements", "handoff"],
+          run: () => showRoute("/builder", { source: "demo" })
+        },
+        {
+          id: "trace-lab",
+          title: "Trace Lab",
+          desc: "Observe user actions and system events as a client-facing proof.",
+          tags: ["telemetry", "audit", "signals"],
+          run: () => showRoute("/insights", { source: "demo" })
+        },
+        {
+          id: "narrative-home",
+          title: "Narrative Home",
+          desc: "Non-card composition + lab instrumentation surface.",
+          tags: ["layout", "nav", "premium"],
+          run: () => showRoute("/", { source: "demo" })
+        }
+      ];
+
+      const modeBadge = $("#activeModeBadge");
+      const demoList = $("#demoList");
+
+      const setMode = (id) => {
+        store.set(STORAGE.mode, { id, setAt: nowISO() });
+        const demo = DEMOS.find(d => d.id === id);
+        modeBadge.textContent = "mode: " + (demo ? demo.title : "—");
+        pushEvent("mode.set", { id });
+        renderAll();
+      };
+
+      const renderDemos = () => {
+        const mode = store.get(STORAGE.mode, { id: null });
+        const demo = DEMOS.find(d => d.id === mode.id);
+        modeBadge.textContent = "mode: " + (demo ? demo.title : "none");
+
+        demoList.innerHTML = "";
+        DEMOS.forEach(d => {
+          const row = document.createElement("div");
+          row.className = "demoRow";
+          row.innerHTML = `
+            <div>
+              <strong>${escapeHTML(d.title)}</strong>
+              <span>${escapeHTML(d.desc)} · ${d.tags.map(t => "#" + t).join(" ")}</span>
+            </div>
+            <div class="actions">
+              <button class="btn" data-act="set">set</button>
+              <button class="btn primary" data-act="run">run</button>
+            </div>
+          `;
+          row.querySelector('[data-act="set"]').addEventListener("click", () => setMode(d.id));
+          row.querySelector('[data-act="run"]').addEventListener("click", () => {
+            setMode(d.id);
+            pushEvent("demo.run", { id: d.id });
+            d.run();
+          });
+          demoList.appendChild(row);
+        });
+      };
+
+      /* CONFIG */
+      const audienceSel = $("#audienceSel");
+      const prioritySel = $("#prioritySel");
+      const stackSel = $("#stackSel");
+      const demoNotes = $("#demoNotes");
+      const saveConfigBtn = $("#saveConfigBtn");
+      const exportConfigBtn = $("#exportConfigBtn");
+
+      const loadConfigIntoUI = () => {
+        const cfg = store.get(STORAGE.config, {
+          audience: "founder",
+          priority: "conversion",
+          stack: "html",
+          notes: ""
+        });
+        audienceSel.value = cfg.audience;
+        prioritySel.value = cfg.priority;
+        stackSel.value = cfg.stack;
+        demoNotes.value = cfg.notes;
+      };
+
+      const saveConfig = () => {
+        const cfg = {
+          audience: audienceSel.value,
+          priority: prioritySel.value,
+          stack: stackSel.value,
+          notes: demoNotes.value.trim(),
+          updatedAt: nowISO()
+        };
+        store.set(STORAGE.config, cfg);
+        pushEvent("config.save", cfg);
+        renderAll();
+      };
+
+      saveConfigBtn.addEventListener("click", saveConfig);
+      exportConfigBtn.addEventListener("click", () => {
+        const cfg = store.get(STORAGE.config, {});
+        pushEvent("config.export", { size: JSON.stringify(cfg).length });
+        downloadJSON("fileflow-demo-config.json", cfg);
+      });
+
+      /* LEADS */
+      const leadForm = $("#leadForm");
+      const leadBadge = $("#leadBadge");
+      const vaultBadge = $("#vaultBadge");
+      const leadLog = $("#leadLog");
+      const exportSingleBtn = $("#exportSingleBtn");
+      const clearLeadsBtn = $("#clearLeadsBtn");
+
+      const getLeads = () => store.get(STORAGE.leads, []);
+      const setLeads = (leads) => store.set(STORAGE.leads, leads);
+
+      const renderLeads = () => {
+        const leads = getLeads();
+        leadBadge.textContent = "stored: " + leads.length;
+        vaultBadge.textContent = leads.length ? ("latest: " + new Date(leads[leads.length-1].ts).toLocaleString()) : "empty";
+
+        if (!leads.length){
+          leadLog.textContent = "No leads stored yet.\n\nUse the intake form to persist a real submission locally.\nExport creates a JSON artifact.";
+          return;
+        }
+
+        leadLog.innerHTML = leads.slice().reverse().slice(0, 20).map(l => {
+          const when = new Date(l.ts).toLocaleString();
+          return `<div class="t">${escapeHTML(when)} · <span class="e">${escapeHTML(l.name || "—")}</span> · ${escapeHTML(l.email || "—")}</div>`;
+        }).join("");
+      };
+
+      const validateEmail = (email) => {
+        if (!email) return false;
+        const s = String(email).trim();
+        if (s.length < 6 || s.length > 254) return false;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+      };
+
+      leadForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fd = new FormData(leadForm);
+        const name = String(fd.get("name") || "").trim();
+        const email = String(fd.get("email") || "").trim();
+        const company = String(fd.get("company") || "").trim();
+        const budget = String(fd.get("budget") || "").trim();
+        const message = String(fd.get("message") || "").trim();
+
+        if (!name || !validateEmail(email)){
+          pushEvent("lead.reject", { reason: "validation" });
+          leadForm.reportValidity();
+          return;
+        }
+
+        const lead = {
+          id: uid(),
+          ts: nowISO(),
+          name,
+          email,
+          company,
+          budget,
+          message,
+          config: store.get(STORAGE.config, null),
+          mode: store.get(STORAGE.mode, null),
+          userAgent: navigator.userAgent
+        };
+
+        const leads = getLeads();
+        leads.push(lead);
+        setLeads(leads);
+
+        pushEvent("lead.store", { id: lead.id, hasBudget: !!budget, hasMsg: !!message });
+
+        leadForm.reset();
+        renderAll();
+      });
+
+      exportSingleBtn.addEventListener("click", () => {
+        const leads = getLeads();
+        const latest = leads[leads.length - 1];
+        if (!latest){
+          pushEvent("lead.export.none", {});
+          return;
+        }
+        pushEvent("lead.export.one", { id: latest.id });
+        downloadJSON("fileflow-lead-latest.json", latest);
+      });
+
+      clearLeadsBtn.addEventListener("click", () => {
+        setLeads([]);
+        pushEvent("lead.clear", {});
+        renderAll();
+      });
+
+      /* SPEC BUILDER */
+      const bClient = $("#bClient");
+      const bDomain = $("#bDomain");
+      const bType = $("#bType");
+      const bWindow = $("#bWindow");
+      const bGoals = $("#bGoals");
+      const bConstraints = $("#bConstraints");
+      const bIntegrations = $("#bIntegrations");
+      const bMetrics = $("#bMetrics");
+      const bNotes = $("#bNotes");
+
+      const genSpecBtn = $("#genSpecBtn");
+      const saveSpecBtn = $("#saveSpecBtn");
+      const exportSpecBtn = $("#exportSpecBtn");
+      const clearSpecBtn = $("#clearSpecBtn");
+
+      const specDoc = $("#specDoc");
+      const specBadge = $("#specBadge");
+      const artifactBadge = $("#artifactBadge");
+
+      const parseCSV = (s) =>
+        String(s || "")
+          .split(",")
+          .map(x => x.trim())
+          .filter(Boolean);
+
+      const loadSpecDraft = () => {
+        const d = store.get(STORAGE.spec, null);
+        if (!d) return;
+        bClient.value = d.client || "";
+        bDomain.value = d.domain || "";
+        bType.value = d.type || "";
+        bWindow.value = d.window || "";
+        bGoals.value = (d.goals || []).join(", ");
+        bConstraints.value = (d.constraints || []).join(", ");
+        bIntegrations.value = (d.integrations || []).join(", ");
+        bMetrics.value = (d.metrics || []).join(", ");
+        bNotes.value = d.notes || "";
+      };
+
+      const buildSpecObject = () => {
+        const obj = {
+          id: uid(),
+          ts: nowISO(),
+          client: bClient.value.trim(),
+          domain: bDomain.value.trim(),
+          type: bType.value.trim(),
+          window: bWindow.value.trim(),
+          goals: parseCSV(bGoals.value),
+          constraints: parseCSV(bConstraints.value),
+          integrations: parseCSV(bIntegrations.value),
+          metrics: parseCSV(bMetrics.value),
+          notes: bNotes.value.trim(),
+          config: store.get(STORAGE.config, null),
+          mode: store.get(STORAGE.mode, null)
+        };
+        return obj;
+      };
+
+      const renderSpecText = (spec) => {
+        const lines = [];
+        lines.push("FILEFLOW · DELIVERY SPEC");
+        lines.push("id: " + spec.id);
+        lines.push("captured: " + spec.ts);
+        lines.push("");
+        lines.push("CLIENT");
+        lines.push("  name: " + (spec.client || "—"));
+        lines.push("  domain: " + (spec.domain || "—"));
+        lines.push("");
+        lines.push("SCOPE");
+        lines.push("  type: " + (spec.type || "—"));
+        lines.push("  window: " + (spec.window || "—"));
+        lines.push("");
+        lines.push("GOALS");
+        (spec.goals.length ? spec.goals : ["—"]).forEach(g => lines.push("  - " + g));
+        lines.push("");
+        lines.push("CONSTRAINTS");
+        (spec.constraints.length ? spec.constraints : ["—"]).forEach(c => lines.push("  - " + c));
+        lines.push("");
+        lines.push("INTEGRATIONS");
+        (spec.integrations.length ? spec.integrations : ["—"]).forEach(i => lines.push("  - " + i));
+        lines.push("");
+        lines.push("SUCCESS METRICS");
+        (spec.metrics.length ? spec.metrics : ["—"]).forEach(m => lines.push("  - " + m));
+        lines.push("");
+        lines.push("NOTES");
+        lines.push(spec.notes ? ("  " + spec.notes.replace(/\n/g, "\n  ")) : "  —");
+        lines.push("");
+        lines.push("DEMO CONFIG (if set)");
+        const cfg = spec.config;
+        if (!cfg) lines.push("  —");
+        else{
+          lines.push("  audience: " + (cfg.audience || "—"));
+          lines.push("  priority: " + (cfg.priority || "—"));
+          lines.push("  stack: " + (cfg.stack || "—"));
+          lines.push("  notes: " + (cfg.notes || "—"));
+          lines.push("  updatedAt: " + (cfg.updatedAt || "—"));
+        }
+        lines.push("");
+        lines.push("ACTIVE MODE (if set)");
+        const mode = spec.mode;
+        if (!mode || !mode.id) lines.push("  —");
+        else lines.push("  id: " + mode.id + " · setAt: " + (mode.setAt || "—"));
+        return lines.join("\n");
+      };
+
+      const specCoverage = (spec) => {
+        const fields = [
+          !!spec.client, !!spec.type, !!spec.window,
+          spec.goals.length>0, spec.constraints.length>0,
+          spec.integrations.length>0, spec.metrics.length>0
+        ];
+        const hit = fields.filter(Boolean).length;
+        return Math.round((hit / fields.length) * 100);
+      };
+
+      genSpecBtn.addEventListener("click", () => {
+        const spec = buildSpecObject();
+        const text = renderSpecText(spec);
+        specDoc.textContent = text;
+        artifactBadge.textContent = "ready: yes";
+        const cov = specCoverage(spec);
+        specBadge.textContent = "spec: " + cov + "%";
+        pushEvent("spec.generate", { coverage: cov, hasClient: !!spec.client });
+        renderAll();
+      });
+
+      saveSpecBtn.addEventListener("click", () => {
+        const draft = buildSpecObject();
+        store.set(STORAGE.spec, draft);
+        pushEvent("spec.save", { hasClient: !!draft.client });
+        renderAll();
+      });
+
+      exportSpecBtn.addEventListener("click", () => {
+        const text = specDoc.textContent || "";
+        if (!text.trim()){
+          pushEvent("spec.export.none", {});
+          return;
+        }
+        const payload = {
+          id: uid(),
+          ts: nowISO(),
+          text,
+          draft: store.get(STORAGE.spec, null)
+        };
+        pushEvent("spec.export", { size: text.length });
+        downloadJSON("fileflow-spec-artifact.json", payload);
+      });
+
+      clearSpecBtn.addEventListener("click", () => {
+        specDoc.textContent = "";
+        artifactBadge.textContent = "ready: no";
+        specBadge.textContent = "spec: draft";
+        store.del(STORAGE.spec);
+        pushEvent("spec.clear", {});
+        renderAll();
+      });
+
+      /* INSIGHTS */
+      const kv = $("#kv");
+      const eventLog = $("#eventLog");
+      const eventCountBadge = $("#eventCountBadge");
+      const telemetryBadge = $("#telemetryBadge");
+
+      const exportLeadsBtn = $("#exportLeadsBtn");
+      const exportEventsBtn = $("#exportEventsBtn");
+      const clearEventsBtn = $("#clearEventsBtn");
+
+      exportLeadsBtn.addEventListener("click", () => {
+        const leads = getLeads();
+        pushEvent("leads.export", { count: leads.length });
+        downloadJSON("fileflow-leads.json", leads);
+      });
+
+      exportEventsBtn.addEventListener("click", () => {
+        const events = store.get(STORAGE.events, []);
+        pushEvent("events.export", { count: events.length });
+        downloadJSON("fileflow-events.json", events);
+      });
+
+      clearEventsBtn.addEventListener("click", () => {
+        store.set(STORAGE.events, []);
+        pushEvent("events.clear", {});
+        renderAll();
+      });
+
+      /* HOME METERS */
+      const m1 = $("#m1"), m1v = $("#m1v");
+      const m2 = $("#m2"), m2v = $("#m2v");
+      const m3 = $("#m3"), m3v = $("#m3v");
+      const envBadge = $("#envBadge");
+      const buildId = $("#buildId");
+
+      /* buttons */
+      const cmdBtn = $("#cmdBtn");
+      const startBtn = $("#startBtn");
+      const wipeBtn = $("#wipeBtn");
+      const clearEventsBtn2 = $("#clearEventsBtn"); // already wired
+      const clearSpecBtn2 = $("#clearSpecBtn"); // already wired
+
+      const wipeBtn2 = $("#wipeBtn");
+      wipeBtn2.addEventListener("click", () => {
+        localStorage.removeItem(STORAGE.leads);
+        localStorage.removeItem(STORAGE.events);
+        localStorage.removeItem(STORAGE.config);
+        localStorage.removeItem(STORAGE.spec);
+        localStorage.removeItem(STORAGE.mode);
+        pushEvent("wipe", {}); // records fresh event after wipe for trace
+        renderAll();
+      });
+
+      startBtn.addEventListener("click", () => {
+        showRoute("/demos", { source: "start" });
+      });
+
+      /* Command palette */
+      const overlay = $("#overlay");
+      const cmdInput = $("#cmdInput");
+      const cmdList = $("#cmdList");
+
+      const COMMANDS = () => {
+        const leads = getLeads();
+        const events = store.get(STORAGE.events, []);
+        const cfg = store.get(STORAGE.config, null);
+        const mode = store.get(STORAGE.mode, null);
+
+        return [
+          { key: "Go: home", hint: "/", run: () => showRoute("/", { source: "cmd" }) },
+          { key: "Go: demos", hint: "/demos", run: () => showRoute("/demos", { source: "cmd" }) },
+          { key: "Go: builder", hint: "/builder", run: () => showRoute("/builder", { source: "cmd" }) },
+          { key: "Go: insights", hint: "/insights", run: () => showRoute("/insights", { source: "cmd" }) },
+          { key: "Go: contact", hint: "/contact", run: () => showRoute("/contact", { source: "cmd" }) },
+
+          { key: "Export: leads", hint: `count ${leads.length}`, run: () => downloadJSON("fileflow-leads.json", leads) },
+          { key: "Export: events", hint: `count ${events.length}`, run: () => downloadJSON("fileflow-events.json", events) },
+          { key: "Export: config", hint: cfg ? "configured" : "none", run: () => downloadJSON("fileflow-demo-config.json", cfg || {}) },
+
+          { key: "Clear: leads", hint: "destructive", run: () => { setLeads([]); pushEvent("lead.clear", { via:"cmd" }); renderAll(); } },
+          { key: "Clear: events", hint: "destructive", run: () => { store.set(STORAGE.events, []); pushEvent("events.clear", { via:"cmd" }); renderAll(); } },
+          { key: "Clear: spec draft", hint: "destructive", run: () => { store.del(STORAGE.spec); specDoc.textContent=""; artifactBadge.textContent="ready: no"; specBadge.textContent="spec: draft"; pushEvent("spec.clear", { via:"cmd" }); renderAll(); } },
+
+          { key: "Mode: set Nebula Intake", hint: "demo mode", run: () => setMode("nebula-intake") },
+          { key: "Mode: set Spec Forge", hint: "demo mode", run: () => setMode("spec-forge") },
+          { key: "Mode: set Trace Lab", hint: "demo mode", run: () => setMode("trace-lab") },
+
+          { key: "Run: active mode", hint: mode?.id ? mode.id : "none", run: () => {
+              const m = store.get(STORAGE.mode, { id:null });
+              const d = DEMOS.find(x => x.id === m.id);
+              if (d){ pushEvent("demo.run", { id: d.id, via:"cmd" }); d.run(); }
+            }
+          },
+        ];
+      };
+
+      const openPalette = () => {
+        overlay.classList.add("open");
+        cmdInput.value = "";
+        renderCmd("");
+        cmdInput.focus();
+        pushEvent("palette.open", {});
+      };
+      const closePalette = () => {
+        overlay.classList.remove("open");
+        pushEvent("palette.close", {});
+      };
+
+      const renderCmd = (query) => {
+        const q = String(query || "").trim().toLowerCase();
+        const items = COMMANDS().filter(c => {
+          if (!q) return true;
+          return (c.key + " " + c.hint).toLowerCase().includes(q);
+        }).slice(0, 14);
+
+        cmdList.innerHTML = "";
+        items.forEach((c, idx) => {
+          const el = document.createElement("div");
+          el.className = "item";
+          el.tabIndex = 0;
+          el.innerHTML = `
+            <div class="left">
+              <b>${escapeHTML(c.key)}</b>
+              <span>${escapeHTML(c.hint)}</span>
+            </div>
+            <div class="badge">enter</div>
+          `;
+          el.addEventListener("click", () => { closePalette(); c.run(); pushEvent("cmd.run", { key: c.key }); });
+          el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter"){ closePalette(); c.run(); pushEvent("cmd.run", { key: c.key }); }
+          });
+          cmdList.appendChild(el);
+          if (idx === 0) el.dataset.first = "1";
+        });
+      };
+
+      cmdBtn.addEventListener("click", openPalette);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) closePalette(); });
+      cmdInput.addEventListener("input", () => renderCmd(cmdInput.value));
+      window.addEventListener("keydown", (e) => {
+        const isMac = navigator.platform.toLowerCase().includes("mac");
+        const mod = isMac ? e.metaKey : e.ctrlKey;
+
+        if (mod && e.key.toLowerCase() === "k"){
+          e.preventDefault();
+          overlay.classList.contains("open") ? closePalette() : openPalette();
+        } else if (e.key === "Escape" && overlay.classList.contains("open")){
+          e.preventDefault();
+          closePalette();
+        } else if (!overlay.classList.contains("open")){
+          // quick nav keys 1..5
+          if (["1","2","3","4","5"].includes(e.key)){
+            const map = { "1":"/", "2":"/demos", "3":"/builder", "4":"/insights", "5":"/contact" };
+            showRoute(map[e.key], { source: "key" });
+          }
+        } else {
+          if (e.key === "Enter"){
+            const first = cmdList.querySelector('[data-first="1"]');
+            if (first){ first.click(); }
+          }
+        }
+      });
+
+      /* UTIL */
+      function escapeHTML(s){
+        return String(s ?? "").replace(/[&<>"']/g, (m) => ({
+          "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+        }[m]));
+      }
+
+      /* UI RENDER */
+      const renderTelemetry = () => {
+        const leads = getLeads();
+        const events = store.get(STORAGE.events, []);
+        const cfg = store.get(STORAGE.config, null);
+        const mode = store.get(STORAGE.mode, null);
+        const spec = store.get(STORAGE.spec, null);
+
+        telemetryBadge.textContent = "session: " + sessionId.slice(0, 8);
+
+        const lastEvent = events.length ? events[events.length-1] : null;
+        const lastLead = leads.length ? leads[leads.length-1] : null;
+
+        const kvRows = [
+          ["sessionId", sessionId],
+          ["events", String(events.length)],
+          ["leads", String(leads.length)],
+          ["activeRoute", routeFromLocation()],
+          ["mode", mode?.id || "—"],
+          ["config", cfg ? "set" : "—"],
+          ["specDraft", spec ? "saved" : "—"],
+          ["lastEvent", lastEvent ? (lastEvent.type + " · " + new Date(lastEvent.ts).toLocaleString()) : "—"],
+          ["lastLead", lastLead ? (lastLead.email + " · " + new Date(lastLead.ts).toLocaleString()) : "—"],
+        ];
+
+        kv.innerHTML = kvRows.map(([k,v]) => `
+          <div class="kvRow"><span>${escapeHTML(k)}</span><b>${escapeHTML(v)}</b></div>
+        `).join("");
+
+        eventCountBadge.textContent = "events: " + events.length;
+        eventLog.innerHTML = events.slice().reverse().slice(0, 80).map(e => {
+          const t = new Date(e.ts).toLocaleTimeString();
+          return `<div class="t">${escapeHTML(t)} · <span class="e">${escapeHTML(e.type)}</span> · ${escapeHTML(JSON.stringify(e.data))}</div>`;
+        }).join("");
+      };
+
+      const renderHomeMeters = () => {
+        const events = store.get(STORAGE.events, []);
+        const leads = getLeads();
+        const spec = store.get(STORAGE.spec, null);
+
+        // interaction signal: scaled by unique event types within recent 80 events
+        const recent = events.slice(-80);
+        const types = new Set(recent.map(e => e.type));
+        const signal = Math.min(100, Math.round((types.size / 18) * 100));
+        m1.style.width = signal + "%";
+        m1v.textContent = signal + "%";
+
+        // lead pipeline: scaled to 12 leads for meter
+        const leadCount = leads.length;
+        const leadPct = Math.min(100, Math.round((leadCount / 12) * 100));
+        m2.style.width = leadPct + "%";
+        m2v.textContent = String(leadCount);
+
+        // spec coverage: based on saved draft completeness
+        let cov = 0;
+        if (spec){
+          cov = specCoverage({
+            client: spec.client || "",
+            type: spec.type || "",
+            window: spec.window || "",
+            goals: Array.isArray(spec.goals) ? spec.goals : [],
+            constraints: Array.isArray(spec.constraints) ? spec.constraints : [],
+            integrations: Array.isArray(spec.integrations) ? spec.integrations : [],
+            metrics: Array.isArray(spec.metrics) ? spec.metrics : [],
+          });
+        }
+        m3.style.width = cov + "%";
+        m3v.textContent = cov + "%";
+      };
+
+      const renderBuilderFromDraft = () => {
+        const draft = store.get(STORAGE.spec, null);
+        if (draft && !specDoc.textContent.trim()){
+          const text = renderSpecText({ ...draft, id: draft.id || uid(), ts: draft.ts || nowISO() });
+          // Keep artifact empty until user hits generate; but show if already present
+          // (no auto-populate specDoc to avoid faking output)
+        }
+
+        const saved = !!draft;
+        specBadge.textContent = saved ? ("spec: saved") : "spec: draft";
+
+        // ensure artifact badge reflects actual doc content
+        artifactBadge.textContent = (specDoc.textContent && specDoc.textContent.trim()) ? "ready: yes" : "ready: no";
+      };
+
+      const renderConfigBadges = () => {
+        const cfg = store.get(STORAGE.config, null);
+        const mode = store.get(STORAGE.mode, null);
+        const demo = DEMOS.find(d => d.id === mode?.id);
+        $("#activeModeBadge").textContent = "mode: " + (demo ? demo.title : "none");
+
+        const ua = navigator.userAgent.toLowerCase();
+        envBadge.textContent = ua.includes("mac") ? "env: mac" : "env: local";
+        const build = "demo-lab@" + (new Date().toISOString().slice(0,10));
+        buildId.textContent = "build: " + build;
+      };
+
+      const renderLeadVault = () => {
+        renderLeads();
+      };
+
+      const renderAll = () => {
+        renderConfigBadges();
+        renderHomeMeters();
+        renderDemos();
+        renderBuilderFromDraft();
+        renderTelemetry();
+        renderLeadVault();
+      };
+
+      /* preserve stored spec draft in inputs */
+      loadConfigIntoUI();
+      loadSpecDraft();
+
+      /* default route */
+      const initial = routeFromLocation();
+      history.replaceState({ route: initial }, "", initial);
+      setActiveNav(initial);
+
+      pushEvent("boot", { route: initial });
+
+      /* capture global interactions */
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!(t instanceof Element)) return;
+        const key = t.closest("[data-route]") ? "nav.click" : (t.matches("button") ? "button.click" : null);
+        if (!key) return;
+        const label = (t.closest("button")?.textContent || "").trim().slice(0, 80);
+        pushEvent(key, { label });
+      }, { capture: true });
+
+      document.addEventListener("visibilitychange", () => {
+        pushEvent("visibility", { state: document.visibilityState });
+      });
+
+      /* render on load */
+      renderAll();
+
+      /* helpers used in meters/spec */
+      function specCoverage(spec){
+        const fields = [
+          !!spec.client, !!spec.type, !!spec.window,
+          (spec.goals||[]).length>0, (spec.constraints||[]).length>0,
+          (spec.integrations||[]).length>0, (spec.metrics||[]).length>0
+        ];
+        const hit = fields.filter(Boolean).length;
+        return Math.round((hit / fields.length) * 100);
+      }
+
+      /* keep renderAll accessible */
+      window.__fileflow_renderAll = renderAll;
+    })();
+  </script>
+</body>
+</html>
