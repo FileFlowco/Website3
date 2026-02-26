@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FileFlow</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: Inter, system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      filter: blur(3px) saturate(115%);
+      transform: scale(1.02);
+    }
+
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 24px 48px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 2;
+      mix-blend-mode: difference;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      padding: 140px 10vw;
+      max-width: 900px;
+    }
+
+    h1 {
+      font-size: clamp(48px, 7vw, 96px);
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 24px;
+    }
+
+    p {
+      max-width: 520px;
+      color: #aaa;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .actions {
+      margin-top: 40px;
+      display: flex;
+      gap: 16px;
+    }
+
+    button {
+      padding: 14px 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: transparent;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: #fff;
+      color: #000;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<header>
+  <strong>FILEFLOW</strong>
+  <div>SERVICES&nbsp;&nbsp;CONTACT</div>
+</header>
+
+<main>
+  <h1>Software<br>engineered<br>to survive.</h1>
+  <p>
+    FileFlow builds high-end software systems for companies that care about longevity,
+    performance, and correctness. No throwaway code. No shortcuts.
+  </p>
+  <div class="actions">
+    <button class="primary">Start a Project</button>
+    <button>See Capabilities</button>
+  </div>
+</main>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
+<script>
+const canvas = document.getElementById("scene");
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+renderer.setSize(innerWidth, innerHeight);
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 2000);
+camera.position.set(0, 2, 28);
+
+const loader = new THREE.TextureLoader();
+
+// NASA-quality textures
+const saturnMap = loader.load("https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/saturnmap.jpg");
+const ringMap = loader.load("https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/saturnringcolor.jpg");
+const starMap = loader.load("https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/galaxy_starfield.png");
+
+// Starfield (INSIDE sphere)
+const starGeo = new THREE.SphereGeometry(1000, 64, 64);
+const starMat = new THREE.MeshBasicMaterial({
+  map: starMap,
+  side: THREE.BackSide
+});
+const stars = new THREE.Mesh(starGeo, starMat);
+scene.add(stars);
+
+// Saturn
+const saturn = new THREE.Mesh(
+  new THREE.SphereGeometry(6, 64, 64),
+  new THREE.MeshStandardMaterial({
+    map: saturnMap,
+    roughness: 0.7,
+    metalness: 0.0
+  })
+);
+scene.add(saturn);
+
+// Rings (CORRECT ORIENTATION + UV FIX)
+const ringGeo = new THREE.RingGeometry(7.2, 13.5, 256);
+const pos = ringGeo.attributes.position;
+const v3 = new THREE.Vector3();
+for (let i = 0; i < pos.count; i++) {
+  v3.fromBufferAttribute(pos, i);
+  ringGeo.attributes.uv.setXY(i,
+    (v3.length() - 7.2) / (13.5 - 7.2),
+    1
+  );
+}
+
+const rings = new THREE.Mesh(
+  ringGeo,
+  new THREE.MeshStandardMaterial({
+    map: ringMap,
+    transparent: true,
+    side: THREE.DoubleSide
+  })
+);
+rings.rotation.x = Math.PI / 2.5;
+scene.add(rings);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x404040, 0.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+sun.position.set(20, 10, 10);
+scene.add(sun);
+
+// Resize
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// Animation
+let t = 0;
+function animate() {
+  t += 0.002;
+
+  saturn.rotation.y += 0.0012;
+  rings.rotation.z += 0.0006;
+  stars.rotation.y += 0.00015;
+
+  camera.position.x = Math.sin(t) * 2.2;
+  camera.position.y = Math.cos(t * 0.6) * 1.2;
+  camera.lookAt(0, 0, 0);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
